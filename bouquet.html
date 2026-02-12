@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Un bouquet</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5efe3;
+    --parchment: #ede3d0;
+    --aged: #d4c4a0;
+    --ink: #2c2416;
+    --ink-light: #5a4a2e;
+    --ink-faint: #8a7a5e;
+    --accent-gold: #c4922a;
+    --accent-blue: #5b7fa6;
+    --accent-yellow: #d4a922;
+    --accent-green: #6b8a52;
+    --accent-purple: #8a6a9a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--cream);
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--ink);
+    overflow-x: hidden;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* Aged paper border */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    border: 18px solid transparent;
+    border-image: repeating-linear-gradient(
+      45deg,
+      rgba(196,146,42,0.15) 0px,
+      rgba(196,146,42,0.05) 4px,
+      transparent 4px,
+      transparent 12px
+    ) 18;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .page-title {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+    text-transform: lowercase;
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1.2s ease forwards 0.3s;
+  }
+
+  .divider {
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--aged), transparent);
+    margin: 0.75rem auto 2rem;
+    opacity: 0;
+    animation: fadeUp 1.2s ease forwards 0.5s;
+  }
+
+  /* Bouquet container */
+  .bouquet {
+    position: relative;
+    width: min(520px, 95vw);
+    height: min(580px, 80vw);
+    margin: 0 auto;
+  }
+
+  /* Individual flower cards */
+  .flower {
+    position: absolute;
+    cursor: pointer;
+    transform-origin: bottom center;
+    opacity: 0;
+    transition: transform 0.3s ease, filter 0.3s ease;
+  }
+
+  .flower:hover { filter: brightness(1.05); }
+  .flower:hover .stem { transform: rotate(-2deg); }
+
+  /* Bloom animation on load */
+  .flower.bloomed { animation: bloom 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+  @keyframes bloom {
+    0% { opacity: 0; transform: scale(0.1) translateY(60px) rotate(-15deg); }
+    60% { opacity: 1; transform: scale(1.05) translateY(-5px) rotate(2deg); }
+    80% { transform: scale(0.97) translateY(2px) rotate(-1deg); }
+    100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SVG flower styles */
+  .flower svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(1px 2px 6px rgba(44,36,22,0.12));
+  }
+
+  /* Tooltip / note card */
+  .note-card {
+    position: fixed;
+    background: var(--parchment);
+    border: 1px solid var(--aged);
+    padding: 1.4rem 1.6rem;
+    max-width: min(300px, 85vw);
+    box-shadow: 3px 4px 20px rgba(44,36,22,0.15);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateY(6px);
+    z-index: 200;
+    border-radius: 1px;
+  }
+
+  .note-card::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(196,146,42,0.2);
+    pointer-events: none;
+  }
+
+  .note-card.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .note-name {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--accent-gold);
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  .note-latin {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 0.9rem;
+    font-style: normal;
+  }
+
+  .note-text {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: var(--ink-light);
+    font-style: italic;
+  }
+
+  .note-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-style: normal;
+    font-family: 'Cormorant Garamond', serif;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .note-close:hover { opacity: 1; }
+
+  /* Ribbon at base */
+  .ribbon-wrap {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 2.8s;
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+    text-transform: lowercase;
+    font-style: italic;
+    margin-top: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 3.2s;
+  }
+
+  /* Overlay to close note */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+  }
+  .overlay.active { display: block; }
+</style>
+</head>
+<body>
+
+<p class="page-title">pour toi — un bouquet</p>
+<div class="divider"></div>
+
+<div class="bouquet" id="bouquet">
+  <!-- Flowers injected by JS -->
+</div>
+
+<p class="hint">cliquer sur chaque fleur</p>
+
+<div class="note-card" id="noteCard">
+  <span class="note-close" id="noteClose">fermer</span>
+  <div class="note-name" id="noteName"></div>
+  <div class="note-latin" id="noteLatin"></div>
+  <div class="note-text" id="noteText"></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<script>
+const flowers = [
+  {
+    id: 'tournesol',
+    name: 'Tournesol',
+    latin: 'Helianthus annuus',
+    note: 'parce que tu as cette façon d\'orienter la lumière autour de toi… et un peu autour de moi aussi.',
+    color: '#d4a922',
+    accent: '#c4922a',
+    // position in bouquet (% from left, % from top, rotation, size)
+    pos: { left: '38%', top: '4%', rot: '-4deg', w: 150, h: 200 },
+    delay: 0.4,
+    draw: drawSunflower
+  },
+  {
+    id: 'bourrache',
+    name: 'Bourrache',
+    latin: 'Borago officinalis',
+    note: 'fleur des marins. Bleu courage. Pour quelqu\'un qui vient de la campagne mais regarde toujours l\'horizon.',
+    color: '#5b7fa6',
+    accent: '#3d6080',
+    pos: { left: '10%', top: '18%', rot: '8deg', w: 130, h: 180 },
+    delay: 0.9,
+    draw: drawBorage
+  },
+  {
+    id: 'millepertuis',
+    name: 'Millepertuis',
+    latin: 'Hypericum perforatum',
+    note: 'ça pousse sans faire de bruit, mais ça réchauffe quand même. Étrangement familier.',
+    color: '#c4a030',
+    accent: '#6b8a52',
+    pos: { left: '62%', top: '12%', rot: '-8deg', w: 130, h: 190 },
+    delay: 1.4,
+    draw: drawStJohn
+  },
+  {
+    id: 'clematite',
+    name: 'Clématite',
+    latin: 'Clematis vitalba',
+    note: 'la joie du voyageur. Ça grimpe, ça explore… ça ne tient jamais vraiment en place.',
+    color: '#c8b8d4',
+    accent: '#8a6a9a',
+    pos: { left: '20%', top: '3%', rot: '12deg', w: 120, h: 170 },
+    delay: 1.9,
+    draw: drawClematis
+  },
+  {
+    id: 'heliotrope',
+    name: 'Héliotrope',
+    latin: 'Heliotropium arborescens',
+    note: 'modeste, mais toujours attiré par la lumière. Coïncidence ?',
+    color: '#9a7ab0',
+    accent: '#6a4a80',
+    pos: { left: '55%', top: '2%', rot: '-12deg', w: 120, h: 165 },
+    delay: 2.4,
+    draw: drawHeliotrope
+  }
+];
+
+// --- SVG Drawing Functions ---
+
+function drawSunflower(f) {
+  const c = f.color, a = f.accent;
+  return `<svg viewBox="0 0 150 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Stem -->
+    <path d="M75 200 Q72 160 70 130 Q68 100 75 80" stroke="#5a7a3a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <!-- Leaves -->
+    <path d="M72 155 Q50 140 44 125 Q60 130 72 145" fill="#6b8a52" opacity="0.85"/>
+    <path d="M73 135 Q95 118 100 102 Q86 112 74 128" fill="#6b8a52" opacity="0.75"/>
+    <!-- Petals outer -->
+    ${Array.from({length: 13}, (_, i) => {
+      const angle = (i * 360/13) * Math.PI/180;
+      const px = 75 + Math.cos(angle)*28;
+      const py = 68 + Math.sin(angle)*28;
+      const r = angle + Math.PI/2;
+      return `<ellipse cx="${px}" cy="${py}" rx="7" ry="16" fill="${c}" opacity="0.9" transform="rotate(${angle*180/Math.PI+90} ${px} ${py})"/>`;
+    }).join('')}
+    <!-- Petals inner -->
+    ${Array.from({length: 8}, (_, i) => {
+      const angle = (i * 360/8 + 20) * Math.PI/180;
+      const px = 75 + Math.cos(angle)*18;
+      const py = 68 + Math.sin(angle)*18;
+      return `<ellipse cx="${px}" cy="${py}" rx="5" ry="12" fill="${a}" opacity="0.7" transform="rotate(${angle*180/Math.PI+90} ${px} ${py})"/>`;
+    }).join('')}
+    <!-- Center -->
+    <circle cx="75" cy="68" r="16" fill="#3a2410"/>
+    <circle cx="75" cy="68" r="12" fill="#4a3418"/>
+    <!-- Center dots -->
+    ${Array.from({length: 24}, (_, i) => {
+      const angle = (i * 15) * Math.PI/180;
+      const r = 5 + (i%3)*2.5;
+      return `<circle cx="${75+Math.cos(angle)*r}" cy="${68+Math.sin(angle)*r}" r="1.2" fill="#2a1a08" opacity="0.6"/>`;
+    }).join('')}
+    <!-- Botanical detail lines on petals -->
+    <line x1="75" y1="40" x2="75" y2="55" stroke="${a}" stroke-width="0.8" opacity="0.5"/>
+  </svg>`;
+}
+
+function drawBorage(f) {
+  const c = f.color, a = f.accent;
+  return `<svg viewBox="0 0 130 180" xmlns="http://www.w3.org/2000/svg">
+    <!-- Stem -->
+    <path d="M65 180 Q63 155 60 130 Q58 110 62 90 Q64 75 65 60" stroke="#5a7a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Hairy stem detail -->
+    ${Array.from({length: 8}, (_, i) => {
+      const y = 90 + i*10;
+      return `<line x1="${60+i%2*4}" y1="${y}" x2="${55+i%2*6}" y2="${y-5}" stroke="#5a7a3a" stroke-width="0.8" opacity="0.5"/>`;
+    }).join('')}
+    <!-- Leaf -->
+    <path d="M61 140 Q38 130 35 115 Q50 122 62 135" fill="#6b8a52" opacity="0.8"/>
+    <path d="M62 115 Q85 100 88 84 Q74 96 63 110" fill="#6b8a52" opacity="0.7"/>
+    <!-- 5 star petals -->
+    ${Array.from({length: 5}, (_, i) => {
+      const angle = (i*72 - 90) * Math.PI/180;
+      const px = 65 + Math.cos(angle)*22;
+      const py = 55 + Math.sin(angle)*22;
+      return `<ellipse cx="${px}" cy="${py}" rx="9" ry="14" fill="${c}" opacity="0.88" transform="rotate(${i*72} ${px} ${py})"/>`;
+    }).join('')}
+    <!-- White star center overlay -->
+    ${Array.from({length: 5}, (_, i) => {
+      const angle = (i*72 - 90) * Math.PI/180;
+      const px = 65 + Math.cos(angle)*10;
+      const py = 55 + Math.sin(angle)*10;
+      return `<line x1="65" y1="55" x2="${px}" y2="${py}" stroke="white" stroke-width="2" opacity="0.7"/>`;
+    }).join('')}
+    <!-- Stamens -->
+    ${Array.from({length: 5}, (_, i) => {
+      const angle = (i*72 - 90) * Math.PI/180;
+      const px = 65 + Math.cos(angle)*8;
+      const py = 55 + Math.sin(angle)*8;
+      return `<circle cx="${px}" cy="${py}" r="2.5" fill="white" opacity="0.9"/>`;
+    }).join('')}
+    <!-- Center -->
+    <circle cx="65" cy="55" r="7" fill="${a}"/>
+    <circle cx="65" cy="55" r="4" fill="#1a3050"/>
+  </svg>`;
+}
+
+function drawStJohn(f) {
+  const c = f.color, a = f.accent;
+  return `<svg viewBox="0 0 130 190" xmlns="http://www.w3.org/2000/svg">
+    <!-- Main stem -->
+    <path d="M65 190 Q63 165 62 140 Q60 115 65 90" stroke="#5a7a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Branch stems -->
+    <path d="M64 110 Q50 95 46 82" stroke="#5a7a3a" stroke-width="2" fill="none"/>
+    <path d="M64 98 Q78 83 82 70" stroke="#5a7a3a" stroke-width="2" fill="none"/>
+    <path d="M64 88 Q65 70 65 58" stroke="#5a7a3a" stroke-width="2" fill="none"/>
+    <!-- Leaves with dots (characteristic) -->
+    <path d="M62 145 Q42 138 40 125 Q54 130 63 140" fill="#6b8a52" opacity="0.8"/>
+    <ellipse cx="52" cy="130" rx="4" ry="2.5" fill="#3a5a2a" opacity="0.3" transform="rotate(-20 52 130)"/>
+    <!-- Flowers - 5-petaled yellow -->
+    ${[
+      {x:46, y:75}, {x:82, y:63}, {x:65, y:52}, {x:40, y:55}, {x:88, y:48}
+    ].map((p, fi) => `
+      ${Array.from({length: 5}, (_, i) => {
+        const angle = (i*72 - 90) * Math.PI/180;
+        const px = p.x + Math.cos(angle)*10;
+        const py = p.y + Math.sin(angle)*10;
+        return `<ellipse cx="${px}" cy="${py}" rx="5.5" ry="8" fill="${c}" opacity="0.9" transform="rotate(${i*72} ${px} ${py})"/>`;
+      }).join('')}
+      <!-- Stamens burst -->
+      ${Array.from({length: 12}, (_, i) => {
+        const angle = (i*30) * Math.PI/180;
+        return `<line x1="${p.x}" y1="${p.y}" x2="${p.x+Math.cos(angle)*8}" y2="${p.y+Math.sin(angle)*8}" stroke="${a}" stroke-width="1" opacity="0.8"/>
+        <circle cx="${p.x+Math.cos(angle)*9}" cy="${p.y+Math.sin(angle)*9}" r="1.2" fill="${a}"/>`;
+      }).join('')}
+      <circle cx="${p.x}" cy="${p.y}" r="4" fill="${a}"/>
+    `).join('')}
+  </svg>`;
+}
+
+function drawClematis(f) {
+  const c = f.color, a = f.accent;
+  return `<svg viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg">
+    <!-- Twining vine stem -->
+    <path d="M60 170 Q55 150 58 130 Q62 110 55 90 Q50 72 58 55 Q63 42 60 28" stroke="#5a7a3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Tendril -->
+    <path d="M57 100 Q40 90 38 78 Q45 82 52 92" stroke="#5a7a3a" stroke-width="1.5" fill="none"/>
+    <path d="M56 75 Q75 65 78 52 Q68 60 58 70" stroke="#5a7a3a" stroke-width="1.5" fill="none"/>
+    <!-- Leaves -->
+    <path d="M38 80 Q22 72 22 60 Q32 68 40 76" fill="#6b8a52" opacity="0.75"/>
+    <path d="M76 55 Q92 45 93 33 Q82 42 76 52" fill="#6b8a52" opacity="0.75"/>
+    <!-- 4-petal flowers (clematis characteristic) -->
+    <!-- Large flower top -->
+    ${Array.from({length: 4}, (_, i) => {
+      const angle = (i*90 - 45) * Math.PI/180;
+      const px = 60 + Math.cos(angle)*18;
+      const py = 28 + Math.sin(angle)*18;
+      return `<ellipse cx="${px}" cy="${py}" rx="10" ry="16" fill="${c}" opacity="0.85" transform="rotate(${i*90+45} ${px} ${py})"/>
+      <!-- Petal veins -->
+      <line x1="${60+Math.cos(angle)*8}" y1="${28+Math.sin(angle)*8}" x2="${px}" y2="${py}" stroke="${a}" stroke-width="0.8" opacity="0.4"/>`;
+    }).join('')}
+    <!-- Stamen center -->
+    ${Array.from({length: 14}, (_, i) => {
+      const angle = (i*25.7) * Math.PI/180;
+      return `<line x1="60" y1="28" x2="${60+Math.cos(angle)*10}" y2="${28+Math.sin(angle)*10}" stroke="#f0e8d0" stroke-width="1" opacity="0.9"/>
+      <circle cx="${60+Math.cos(angle)*11}" cy="${28+Math.sin(angle)*11}" r="1.5" fill="#d4c060"/>`;
+    }).join('')}
+    <circle cx="60" cy="28" r="5" fill="#e8e0f0"/>
+    <!-- Smaller flower -->
+    ${Array.from({length: 4}, (_, i) => {
+      const angle = (i*90 - 45) * Math.PI/180;
+      const px = 40 + Math.cos(angle)*11;
+      const py = 70 + Math.sin(angle)*11;
+      return `<ellipse cx="${px}" cy="${py}" rx="6" ry="10" fill="${c}" opacity="0.75" transform="rotate(${i*90+45} ${px} ${py})"/>`;
+    }).join('')}
+    ${Array.from({length: 8}, (_, i) => {
+      const angle = (i*45) * Math.PI/180;
+      return `<line x1="40" y1="70" x2="${40+Math.cos(angle)*6}" y2="${70+Math.sin(angle)*6}" stroke="#f0e8d0" stroke-width="0.8" opacity="0.7"/>`;
+    }).join('')}
+    <circle cx="40" cy="70" r="3" fill="#e8e0f0"/>
+  </svg>`;
+}
+
+function drawHeliotrope(f) {
+  const c = f.color, a = f.accent;
+  return `<svg viewBox="0 0 120 165" xmlns="http://www.w3.org/2000/svg">
+    <!-- Curved stem (heliotropic - bending toward light) -->
+    <path d="M60 165 Q58 145 55 122 Q52 100 56 80 Q60 62 58 45" stroke="#5a7a3a" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <!-- Branch -->
+    <path d="M57 90 Q42 78 40 65" stroke="#5a7a3a" stroke-width="2" fill="none"/>
+    <!-- Leaves (slightly rough edged) -->
+    <path d="M55 130 Q36 122 34 108 Q48 116 56 126" fill="#6b8a52" opacity="0.8"/>
+    <path d="M56 108 Q74 95 76 80 Q63 91 57 104" fill="#6b8a52" opacity="0.7"/>
+    <!-- Scorpioid cyme - cluster of tiny 5-petal flowers -->
+    ${[
+      {x:58, y:40, s:1.0}, {x:72, y:36, s:0.85}, {x:46, y:38, s:0.85},
+      {x:65, y:52, s:0.75}, {x:50, y:50, s:0.75},
+      {x:78, y:48, s:0.65}, {x:42, y:55, s:0.65},
+      {x:40, y:62, s:0.55}, {x:70, y:62, s:0.55},
+    ].map((p) => `
+      ${Array.from({length: 5}, (_, i) => {
+        const angle = (i*72 - 90) * Math.PI/180;
+        const r = 7*p.s;
+        const px = p.x + Math.cos(angle)*r;
+        const py = p.y + Math.sin(angle)*r;
+        return `<ellipse cx="${px}" cy="${py}" rx="${4*p.s}" ry="${6.5*p.s}" fill="${c}" opacity="${0.82*p.s+0.18}" transform="rotate(${i*72} ${px} ${py})"/>`;
+      }).join('')}
+      <!-- White eye -->
+      <circle cx="${p.x}" cy="${p.y}" r="${3*p.s}" fill="white" opacity="0.9"/>
+      <circle cx="${p.x}" cy="${p.y}" r="${1.5*p.s}" fill="${a}"/>
+    `).join('')}
+  </svg>`;
+}
+
+// --- Render flowers ---
+const bouquet = document.getElementById('bouquet');
+
+flowers.forEach((f, i) => {
+  const el = document.createElement('div');
+  el.className = 'flower';
+  el.style.cssText = `
+    left: ${f.pos.left};
+    top: ${f.pos.top};
+    width: ${f.pos.w}px;
+    height: ${f.pos.h}px;
+    transform: rotate(${f.pos.rot});
+    animation-delay: ${f.delay}s;
+  `;
+  el.innerHTML = f.draw(f);
+  el.dataset.id = f.id;
+
+  // Trigger bloom after delay
+  setTimeout(() => {
+    el.classList.add('bloomed');
+  }, f.delay * 1000);
+
+  bouquet.appendChild(el);
+  el.addEventListener('click', (e) => showNote(e, f));
+});
+
+// --- Note card logic ---
+const noteCard = document.getElementById('noteCard');
+const noteClose = document.getElementById('noteClose');
+const overlay = document.getElementById('overlay');
+
+function showNote(e, f) {
+  e.stopPropagation();
+  document.getElementById('noteName').textContent = f.name;
+  document.getElementById('noteLatin').textContent = f.latin;
+  document.getElementById('noteText').textContent = f.note;
+
+  // Position card near flower but keep in viewport
+  const rect = e.currentTarget.getBoundingClientRect();
+  const cardW = 300;
+  const cardH = 160;
+
+  let left = rect.left + rect.width/2 - cardW/2;
+  let top = rect.top - cardH - 12;
+
+  // Keep in bounds
+  left = Math.max(10, Math.min(left, window.innerWidth - cardW - 10));
+  if (top < 60) top = rect.bottom + 12;
+
+  noteCard.style.left = left + 'px';
+  noteCard.style.top = top + 'px';
+  noteCard.classList.add('visible');
+  overlay.classList.add('active');
+}
+
+function hideNote() {
+  noteCard.classList.remove('visible');
+  overlay.classList.remove('active');
+}
+
+noteClose.addEventListener('click', hideNote);
+overlay.addEventListener('click', hideNote);
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape') hideNote(); });
+</script>
+</body>
+</html>
